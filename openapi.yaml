@@ -1,0 +1,378 @@
+openapi: 3.0.2
+info:
+  version: "0.1.0"
+  title: Powered for Patients
+  description: Powered for Patients example API specification.
+paths:
+  /status-reports:
+    post:
+      summary: Send a status report
+      description: Accepts a status report
+      operationId: postStatusReport
+      requestBody:
+        content:
+          application/json:
+            schema:
+             $ref: '#/components/schemas/StatusReportInput'
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '409':
+          $ref: '#/components/responses/409'
+      tags:
+        - Status Reports
+    get:
+      summary: Retrieve status reports
+      description: Returns a pagination of status reports
+      operationId: getStatusReports
+      parameters:
+        - $ref: '#/components/parameters/query-site'
+        - $ref: '#/components/parameters/query-status'
+        - $ref: '#/components/parameters/query-from'
+        - $ref: '#/components/parameters/query-to'
+        - $ref: '#/components/parameters/query-offset'
+        - $ref: '#/components/parameters/query-limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusReportPagination'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+      tags:
+        - Status Reports
+  /sites:
+    get:
+      summary: Retrieve sites
+      description: Returns a pagination of sites
+      operationId: getSites
+      parameters:
+        - $ref: '#/components/parameters/query-status'
+        - $ref: '#/components/parameters/query-offset'
+        - $ref: '#/components/parameters/query-limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SitePagination'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+      tags:
+        - Sites
+components:
+  schemas:
+    StatusReport:
+      properties:
+        id:
+          type: string
+          format: uuid
+        at:
+          type: string
+          format: date-time
+        site:
+          $ref: '#/components/schemas/SiteReference'
+        status:
+          type: string
+          enum:
+            - CRITICAL
+            - ALERT
+            - STABLE
+        message:
+          type: string
+          description: A description of the reason for the status
+    StatusReportInput:
+      properties:
+        at:
+          type: string
+          format: date-time
+        site:
+          properties:
+            id:
+              type: string
+              format: uuid
+        status:
+          type: string
+          enum:
+            - CRITICAL
+            - ALERT
+            - STABLE
+        message:
+          type: string
+          description: A description of the reason for the status
+    StatusReportPagination:
+      allOf:
+        - $ref: '#/components/schemas/AbstractPagination'
+        - properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/StatusReport'
+          required:
+            - data
+    Site:
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        status:
+          description: Most recent status
+          enum:
+            - CRITICAL
+            - ALERT
+            - STABLE
+    SiteReference:
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    SitePagination:
+      allOf:
+        - $ref: '#/components/schemas/AbstractPagination'
+        - properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Site'
+          required:
+            - data
+    PaginationLinks:
+      properties:
+        next:
+          description: A link to the next page of results
+          type: string
+        previous:
+          description: A link to the previous page of results
+          type: string
+        self:
+          description: A link to this page of results
+          type: string
+      required:
+        - self
+    AbstractPagination:
+      properties:
+        count:
+          description: "The number of items in this page of results (the number of items in the data array)"
+          format: int32
+          type: integer
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
+        total:
+          description: The total number of items in the result set
+          format: int32
+          type: integer
+      required:
+        - count
+        - data
+        - total
+        - links
+    AbstractHTTPResponse:
+      type: object
+      properties:
+        status:
+          description: HTTP status code
+          format: int32
+          type: integer
+          enum:
+            - 400
+            - 401
+            - 403
+            - 404
+            - 409
+        message:
+          description: A detailed description of the response or error
+          type: string
+        reason:
+          description: A description of the response code
+          type: string
+          enum:
+            - Bad Request
+            - Unauthorized
+            - Forbidden
+            - Not Found
+            - Conflict
+      required:
+        - reason
+        - message
+    BadRequestResponse:
+      allOf:
+        - $ref: '#/components/schemas/AbstractHTTPResponse'
+        - properties:
+            status:
+              description: HTTP status code
+              format: int32
+              type: integer
+              enum:
+                - 400
+            reason:
+              description: A description of the response code
+              type: string
+              enum:
+                - Bad Request
+    UnauthorizedResponse:
+      allOf:
+        - $ref: '#/components/schemas/AbstractHTTPResponse'
+        - properties:
+            status:
+              description: HTTP status code
+              format: int32
+              type: integer
+              enum:
+                - 401
+            reason:
+              description: A description of the response code
+              type: string
+              enum:
+                - Unauthorized
+    ForbiddenResponse:
+      allOf:
+        - $ref: '#/components/schemas/AbstractHTTPResponse'
+        - properties:
+            status:
+              description: HTTP status code
+              format: int32
+              type: integer
+              enum:
+                - 403
+            reason:
+              description: A description of the response code
+              type: string
+              enum:
+                - Forbidden
+    NotFoundResponse:
+      allOf:
+        - $ref: '#/components/schemas/AbstractHTTPResponse'
+        - properties:
+            status:
+              description: HTTP status code
+              format: int32
+              type: integer
+              enum:
+                - 404
+            reason:
+              description: A description of the response code
+              type: string
+              enum:
+                - Not Found
+    ConflictResponse:
+      allOf:
+        - $ref: '#/components/schemas/AbstractHTTPResponse'
+        - properties:
+            status:
+              description: HTTP status code
+              format: int32
+              type: integer
+              enum:
+                - 409
+            reason:
+              description: A description of the response code
+              type: string
+              enum:
+                - Conflict
+  parameters:
+    query-site:
+      name: site
+      in: query
+      description: The site
+      required: false
+      schema:
+        type: string
+    query-limit:
+      name: limit
+      in: query
+      description: Maximum result size to return
+      required: false
+      schema:
+        type: integer
+        default: 100
+        maximum: 1000
+    query-offset:
+      name: offset
+      in: query
+      description: Skip this many results before returning the result set
+      required: false
+      schema:
+        type: integer
+        default: 0
+    query-from:
+      name: from
+      in: query
+      description: From this time
+      required: false
+      example: 1970-01-01T00:00:00.000Z
+      schema:
+        type: string
+        format: date-time
+    query-to:
+      name: to
+      in: query
+      description: To this time
+      required: false
+      example: 1999-12-31T23:59:59.999Z
+      schema:
+        type: string
+        format: date-time
+    query-status:
+      name: status
+      in: query
+      description: CRITICAL or ALERT or STABLE
+      required: false
+      example: STABLE
+      schema:
+        type: string
+        enum:
+          - CRITICAL
+          - ALERT
+          - STABLE
+  responses:
+    '400':
+      description: Bad Request - The request is malformed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BadRequestResponse'
+    '401':
+      description: Unauthorized - The caller cannot be identified
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UnauthorizedResponse'
+    '403':
+      description: Forbidden - The authenticated principal does not have permission to perform this action
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ForbiddenResponse'
+    '404':
+      description: Not Found - The requested resource does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NotFoundResponse'
+    '409':
+      description: Conflict - The action cannot be performed by the system
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConflictResponse'
